@@ -2,14 +2,12 @@
 
 ## 1.python精通
 
-* 基本语法的精通，熟练使用numpy、pandas、matplotlib等库
 * pytorch库的使用，从自主实现简单的卷积神经网络到transformer实现
 * GitHub上选取一到两个开源项目实现
 
 ## 2.C++精通
 
 * 基本语法的熟练，可以自主实现简单的算法
-* 能够使用STL库
 * 开始刷leetcode
 
 ## 3.明确研究方向
@@ -26,4 +24,4 @@
 
 * git
 * Remote SSH
-* latex强化
+* latex strength
