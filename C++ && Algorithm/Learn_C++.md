@@ -1,5 +1,16 @@
 # 此文档用来记录C++学习过程中关键点
 
+# 0 感觉有用但没有仔细看的章节
+
+* 所有C++11的变量初始化
+* 4.5 4.6 共用体和枚举
+* 4.10.2 模板类array(C++11)
+* 6.8 简单文件I/O
+* 7.10.3 深入探讨函数指针
+* 8.2.4 8.2.5 类与对象使用引用
+* 8.5.6 C++ 11对于函数模板的新标准
+* 9 内存模型
+
 ***
 
 # 1 一些基础知识
@@ -306,6 +317,60 @@ int main()
 const person* XB[3] = {&p1, &p2, &p3};
 std::cout << XB[1] -> price;
 ```
+### 1.3.5 `vector`容器
+
+使用场景：
+> 需要动态增长和缩小的数组
+> 需要频繁在序列末尾添加或移除元素时
+> 需要一个可以高效随机访问元素的容器时
+
+那么使用`vector`吧：
+
+```cpp
+#include <vector>
+```
+
+* 创建`vector`
+
+```cpp
+std::vector<int> myVector; // 创建一个存储整数的空 vector
+std::vector<int> myVector(5); // 创建一个包含 5 个整数的 vector，每个值都为默认值（0）
+std::vector<int> myVector(5, 10); // 创建一个包含 5 个整数的 vector，每个值都为 10
+std::vector<int> vec2 = {1, 2, 3, 4}; // 初始化一个包含元素的 vector
+```
+
+* 添加和删除元素
+
+```cpp
+myVector.push_back(7); // 将整数 7 添加到 vector 的末尾
+myVector.erase(myVector.begin() + 2); // 删除第三个元素
+myVector.clear(); // 清空 vector
+```
+
+* 访问元素和大小
+
+```cpp
+int x = myVector[0]; // 获取第一个元素
+int y = myVector.at(1); // 获取第二个元素
+int size = myVector.size(); // 获取 vector 中的元素数量
+```
+
+* 循环遍历
+
+下面是一般使用for循环的形式：
+```cpp
+for (auto it = myVector.begin(); it != myVector.end(); ++it) 
+{
+    std::cout << *it << " ";
+}
+```
+对于容器类对象还可以使用范围循环`int element : myVector`，非常像python的`for i in range(container)`
+```cpp
+for (int element : myVector) 
+{
+    std::cout << element << " ";
+}
+```
 
 ## 1.4 循环语句
 
@@ -326,10 +391,26 @@ cout << i; // 此时i已经被释放
 ```cpp
 for(j = 0,i = word.size()-1; j < i; --i, ++j)
 ```
+* 基于范围的循环（C++11）
+
+对容器类的数据类型使用（数组，vector等）
+```cpp
+int XB = {1,2,3,4,5};
+for(int xb : XB)
+{
+    std::cout << xb << std::endl;
+}
+for(int& xt : XB)
+{
+    xt *= 0.8;
+}
+```
 
 ## 1.5 分支语句
 
 没有有用的，故跳过
+
+***
 
 # 2 函数
 
@@ -438,3 +519,55 @@ double dog(double* x);
 仔细一想就知道，上述函数在调用时`cube(1.0)`，编译器根本无法根据实参的数据类型选用函数，所以是不被允许的
 
 ## 2.6 函数模板
+
+```cpp
+template<typename Anytype>
+void swap(Anytpe& a, Anytype &b)
+{
+    Anytype temp;
+    temp = a;
+    a = b;
+    b = temp;
+}
+```
+关键字`template`和`typename`是必需的，除非可以使用关键字`class`替代`typename`，这样创建的`swap`函数可以交换任意数据类型的数据
+
+这样做的问题是任意的类型如果为数组或者结构，许多比如相加赋值将无法进行。因此C++提供了两种解决方案：一是重载运算符`+`，二是为特定类型提供具体化的模板
+
+* 显式具体化
+
+和模板化的函数作对比：
+```cpp
+template<typename T>
+void swap(T& a, T& b);//模板类定义
+
+struct job
+{
+    char name[20];
+    double salary;
+}
+template<> void swap(job& a, job& b);//具体化函数定义
+int main()
+{
+    job a,b;
+    swap(a,b);
+}
+```
+
+* 显式实例化
+
+```cpp
+template<typename T>
+void swap(T& a, T& b);//模板类定义
+
+int main()
+{
+    template void swap<char>(char& a, char& b);//显示实例化,相当于实例化了一个模板类
+    char a,b;
+    swap(a,b);
+}
+```
+
+***
+
+# 3 对象和类
