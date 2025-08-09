@@ -6,22 +6,31 @@
 
 // @lc code=start
 #include <vector>
+#include <algorithm>
 
 class Solution {
 public:
     int maxArea(std::vector<int>& height) 
     {
+        int left = 0;
+        int right = height.size() - 1;
         int contain = 0;
-        int H = 0;
-        int W = 0;
-        for(int i = 0; i < (height.size() - 1); i++)
+        int H = 0; // 短板
+        int W = 0; // 两木板间的距离
+        while(left < right)
         {
-            for(int j = 0; j < height.size(); j++)
+            W = right - left;
+            if(height[left] >= height[right])
             {
-                W = j - i;
-                H = (height[i] < height[j]) ? height[i] : height[j];
-                contain = (contain > H * W) ? contain : H * W;
+                H = height[right];
+                right--;
             }
+            else
+            {
+                H = height[left];
+                left++;
+            }
+            contain = std::max(contain, H * W);
         }
         return contain;
     }

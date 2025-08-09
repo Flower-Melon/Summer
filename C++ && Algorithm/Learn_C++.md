@@ -3,13 +3,13 @@
 # 0 感觉有用但没有仔细看的章节
 
 * 所有C++11的变量初始化
-* 4.5 4.6 共用体和枚举
-* 4.10.2 模板类array(C++11)
-* 6.8 简单文件I/O
-* 7.10.3 深入探讨函数指针
-* 8.2.4 8.2.5 类与对象使用引用
-* 8.5.6 C++ 11对于函数模板的新标准
-* 9 内存模型
+* `4.5 & 4.6` : 共用体和枚举
+* `4.10.2` : 模板类array(C++11)
+* `6.8` : 简单文件I/O
+* `7.10.3` : 深入探讨函数指针
+* `8.2.4 & 8.2.5` : 类与对象使用引用
+* `8.5.6` : C++ 11对于函数模板的新标准
+* `9.2` : 存储连续性，作用域和链接性
 
 ***
 
@@ -18,6 +18,8 @@
 * C++在C的基础上添加了面向对象编程和泛型编程的支持
 
 ## 1.1 名空间
+
+* 基础知识
 
 之前学习C++时会见到形如这样的语句，当时不知道什么意思
 ```cpp
@@ -41,6 +43,72 @@ using std::cout;
 using std::cin;
 using std::endl;
 ```
+
+* 定义一个名空间
+
+头文件中的声明：
+```cpp
+namespace pers
+{
+    struct Person
+    { 
+        std::string fname;
+        std::string lname;
+     };
+    void getPerson(Person &);
+    void showPerson(const Person &);
+}
+```
+
+源文件中示例化：
+```cpp
+namespace pers
+{
+    using std::cout;
+    using std::cin;
+    void getPerson(Person & rp)
+    {
+        cout << "Enter first name: ";
+        cin >> rp.fname;
+        cout << "Enter last name: ";
+        cin >> rp.lname;
+    }
+    
+    void showPerson(const Person & rp)
+    {
+        std::cout << rp.lname << ", " << rp.fname;
+    }
+}
+```
+
+* 名空间使用原则
+
+1. 使用在已命名空间中声明的变量，而不是使用外部全局变量或静态全局变量
+2. 如果开发了一个函数库或者类库，将其放在一个命空间中
+3. 对于`using`声明，首选将其作用域设置为局部
+
+示例：
+```cpp
+#include <iostream>
+namespace GlobalVariables 
+{
+    int counter = 0; // 命名空间中的全局变量
+}
+
+void increment() 
+{
+    GlobalVariables::counter++; // 访问命名空间中的变量
+    std::cout << "Counter: " << GlobalVariables::counter << std::endl;
+}
+
+int main() 
+{
+    increment(); // 输出: Counter: 1
+    increment(); // 输出: Counter: 2
+    return 0;
+}
+```
+全局变量的使用是非常不稳定的，容易出现很多问题，而名空间的限定可以很好地解决问题
 
 ## 1.2 数据类型
 
@@ -343,6 +411,7 @@ std::vector<int> vec2 = {1, 2, 3, 4}; // 初始化一个包含元素的 vector
 
 ```cpp
 myVector.push_back(7); // 将整数 7 添加到 vector 的末尾
+myVector.insert(vec.begin() + 1, 10);// 在第二个位置插入元素 10
 myVector.erase(myVector.begin() + 2); // 删除第三个元素
 myVector.clear(); // 清空 vector
 ```
@@ -393,7 +462,7 @@ for(j = 0,i = word.size()-1; j < i; --i, ++j)
 ```
 * 基于范围的循环（C++11）
 
-对容器类的数据类型使用（数组，vector等）
+对容器类的数据类型使用（数组，`vector`等）
 ```cpp
 int XB = {1,2,3,4,5};
 for(int xb : XB)
@@ -409,6 +478,100 @@ for(int& xt : XB)
 ## 1.5 分支语句
 
 没有有用的，故跳过
+
+## 1.6 单独编译
+
+### 1.6.1 头文件
+
+头文件中经常包含的内容：
+* 函数原型，内联函数原型
+* 使用`#define`或`const`定义的符号常量
+* 结构，类声明
+* 函数模板声明
+* 名空间
+
+以便在多个源文件中共享。这样可以提高代码的可读性和可维护性。
+
+以下是一个头文件定义的示例：
+```cpp
+#ifndef COORDIN_H_
+#define COORDIN_H_
+
+struct polar
+{
+    double distance;    // distance from origin
+    double angle;        // direction from origin
+};
+struct rect
+{
+    double x;        // horizontal distance from origin
+    double y;        // vertical distance from origin
+};
+
+polar rect_to_polar(rect xypos);
+void show_polar(polar dapos); 
+
+#endif
+```
+其中`#ifndef`、`#define`和`#endif`是预处理指令，确保头文件只被包含一次，防止重复定义。
+
+而`COORDIN_H_`是一种常见的约定，只需要保重宏定义的唯一性即可，最好兼顾可读性
+
+### 1.6.2 多文件编译
+
+* 编译命令
+
+使用`g++`编译器对多文件进行编译（大一点的工程要考虑使用`cmake`），其中`output`为输出`.exe`文件的名称
+```bash
+g++ -o output file1.cpp file2.cpp
+```
+
+注意这里的编译不需要指定头文件，（如果头文件处于当前工作文件夹下的话）
+
+对于`file1.cpp`和`file2.cpp`中指定头文件的方式应该为：
+```cpp
+#include <iostream>
+#include "coordin.h"
+```
+使用`""`时编译器首先会在当前源文件所在的目录中查找该头文件。如果找不到，才会在系统标准库路径中查找。这通常用于包含项目自定义的头文件
+
+使用`<>`时编译器会在系统的标准库路径中查找该头文件
+
+* 使用`cmake`
+
+确保文件目录为：
+```
+your_project/
+├── CMakeLists.txt
+├── file1.cpp
+└── file2.cpp
+```
+
+其中`CMakeLists.txt`的内容为
+```bash
+cmake_minimum_required(VERSION 3.10)  # 设置所需的 CMake 版本
+project(MyProject)                      # 项目名称
+
+# 指定源文件
+set(SOURCES
+    file1.cpp
+    file2.cpp)
+
+# 如果有头文件目录，可以这样指定
+include_directories(include)  # 假设你的头文件在 include 目录下
+
+# 创建可执行文件
+add_executable(output ${SOURCES})
+```
+
+接着执行如下命令:
+
+```bash
+mkdir build           # 创建一个构建目录
+cd build              # 进入构建目录
+cmake ..              # 配置项目
+make                  # 编译项目
+```
 
 ***
 
@@ -571,3 +734,6 @@ int main()
 ***
 
 # 3 对象和类
+
+## 3.1 类定义
+
