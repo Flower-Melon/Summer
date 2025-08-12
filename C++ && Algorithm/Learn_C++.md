@@ -374,8 +374,14 @@ int main()
 
 2. 静态存储
 静态存储是在整个程序执行期间都存在的存储方式，使变量成为静态的方式有两种：在函数外面定义，或在声明时使用关键字`static`
+静态存储的变量类型有：
+> 全局变量`extern`，没有限制，这个使用比较危险，不建议使用
+> 静态全局变量`static`，不可跨文件访问，作用域是文件全局
+> 静态局部变量`static`，作用域是函数内部
+> 静态成员变量，后面讨论
+> 名空间中定义的变量，实际上可以替代全局变量使用
 
-3. 动态存储
+1. 动态存储
 `new`和`delete`提供了更为灵活的存储方式。它们管理了一个内存池称为**堆（heap）**，这个内存池和用于自动变量和静态变量的内存是分开的。`new`和`delete`允许在一个函数中分配内存，并在另一个函数中释放，这使得数据的声明和周期不完全受程序和函数的生存时间控制，使得程序员有对内存更大的控制权。缺点是内存管理也变得复杂了，在栈中的内存总是连续的，而动态存储会使内存空间不连续
 
 * **有趣**的指针数组
@@ -736,4 +742,207 @@ int main()
 # 3 对象和类
 
 ## 3.1 类定义
+
+下面是一个头文件中声明类的实例：
+```cpp
+#ifndef STOCK1_H_
+#define STOCK1_H_
+#include <string>
+class Stock
+{
+private:
+    std::string company;
+    long shares;
+    double share_val;
+    double total_val;
+    void set_tot() { total_val = shares * share_val; }
+public:
+    Stock();        // default constructor
+    Stock(const std::string & co, long n = 0, double pr = 0.0);
+    ~Stock();       // noisy destructor
+    void buy(long num, double price);
+    void sell(long num, double price);
+    void update(double price);
+    void show();
+};
+#endif
+```
+其中`set_tot()`定义在类声明内，将会自动成为内联函数
+
+数据被封装在`private`中，方法则封装在`public`，这是常用的类声明方法
+
+实例化其中一个函数，使用`Stock::`作用域符号
+```cpp
+void Stock::acquire(const std::string & co, long n, double pr)
+{
+    company = co;
+    if (n < 0)
+    {
+        std::cout << "Number of shares can't be negative; "
+                  << company << " shares set to 0.\n";
+        shares = 0;
+    }
+    else
+        shares = n;
+    share_val = pr;
+    set_tot();
+}
+```
+
+## 3.2 构造函数和析构函数
+
+### 3.2.1 构造函数
+
+构造函数没有返回类型，属于类声明的公有部分
+下面是构造函数的一种可能定义：
+```cpp
+Stock::Stock(const string& co, long n, double pr)
+{
+    company = co;
+    shares = n;
+    share_val = pr;
+    set_hot();
+}
+```
+
+默认构造函数相当于构造函数的一种重载，在未输入参数时使用，如果未定义则由编译器处理：
+```cpp
+Stock::Stock()        // default constructor
+{
+    std::cout << "Default constructor called\n";
+    company = "no name";
+    shares = 0;
+    share_val = 0.0;
+    total_val = 0.0;
+}
+```
+使用方法：
+```cpp
+Stock XB("XB", 50, 2.5);
+Stock xt = new Stock("xt", 25, 1.25); //创建动态指针
+```
+
+* 在类内创建常量
+
+由于声明类只是描述了对象的形式，，并没有创建对象，因此，在创建对象前并没有用于存储的空间。要想在类内创建对象，使用关键字`static`创建静态成员变量：
+```cpp
+class XB
+{
+    private:
+        static const int Months = 12;
+}
+```
+这里的`Months`成员变量将被所以`XB`对象共享
+
+### 3.2.2 析构函数
+
+其他语言的OOP部分并没有考虑析构函数；析构函数主要用于使用`delete`释放掉`new`分配的内存
+通常对于正常创建的对象，析构函数没有要完成的任务，做做样子就行了：
+```cpp
+Stock::~Stock()        // verbose class destructor
+{
+    std::cout << "Bye, " << company << "!\n";
+}
+```
+
+### 3.2.3 `const`成员函数
+
+以后约定如果类的成员函数不对私有部分进行修改时则声明为：
+```cpp
+void show() const; // 声明
+void Stock::show() const; // 定义
+```
+
+## 3.3 `this`指针
+
+假设需要一个比较两个对象功能的函数，则需要将其中一个对象的数据传递给另外一个对象。假设我们定义一个这样的成员函数，返回值是对象的引用：
+```cpp
+const Stock& top(const Stock& s) const;
+```
+
+使用的方法可以为下面的两条语句之一：
+```cpp
+top = stock1.top(stock2);
+top = stock2.top(stock1);
+```
+`top`函数如何返回本身对象是个问题，这里要用到`this`指针：
+```cpp
+const Stock & Stock::topval(const Stock & s) const
+{
+    if (s.total_val > total_val)
+        return s;
+    else
+        return *this; 
+}
+```
+
+`this`指针指向调用成员函数的对象，上述函数中，其实`total_val`不过也是`this->total_val`的简写
+
+## 3.4 使用类实现'栈'的数据结构
+
+* 声明
+```cpp
+#ifndef STACK_H_
+#define STACK_H_
+typedef unsigned long Item;
+class Stack
+{
+private:
+    static const int MAX = 10;    
+    Item items[MAX];    
+    int top;         
+public:
+    Stack();
+    bool isempty() const;
+    bool isfull() const;
+    bool push(const Item & item);   // add item to stack
+    bool pop(Item & item);          // pop top into item
+};
+#endif
+```
+
+* 实现
+```cpp
+#include "stack.h"
+Stack::Stack()    // create an empty stack
+{
+    top = 0;
+}
+
+bool Stack::isempty() const
+{
+    return top == 0;
+}
+
+bool Stack::isfull() const
+{
+    return top == MAX;
+}
+
+bool Stack::push(const Item & item) 
+{
+    if (top < MAX)
+    {
+        items[top++] = item;
+        return true;
+    }
+    else
+        return false;
+}
+
+bool Stack::pop(Item & item)
+{
+    if (top > 0)
+    {
+        item = items[--top];
+        return true;
+    }
+    else
+        return false; 
+}
+```
+
+# 4 使用类
+
+## 4.1 运算符重载
 
