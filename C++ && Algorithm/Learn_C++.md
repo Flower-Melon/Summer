@@ -10,6 +10,8 @@
 * `8.2.4 & 8.2.5` : 类与对象使用引用
 * `8.5.6` : C++ 11对于函数模板的新标准
 * `9.2` : 存储连续性，作用域和链接性
+* `11.5` : 为矢量重载运算符
+* `11.6` ：`explicit`类的类型转换
 
 ***
 
@@ -945,4 +947,133 @@ bool Stack::pop(Item & item)
 # 4 使用类
 
 ## 4.1 运算符重载
+
+函数重载和运算符重载都是C++多态特性的体现；两种重载都是要求根据使用的数据类型而决定函数和运算符采取哪种行为，这很好地体现C++面向数据（对象）的特点，以数据（对象）为核心设计函数和运算符
+
+* 下面从一个实例展现如何对运算符进行重载
+
+头文件：
+```cpp
+#ifndef MYTIME1_H_
+#define MYTIME1_H_
+class Time
+{
+private:
+    int hours;
+    int minutes;
+public:
+    Time();
+    Time(int h, int m = 0);
+    void AddMin(int m);
+    void AddHr(int h);
+    void Reset(int h = 0, int m = 0);
+    Time operator+(const Time & t) const;
+    void Show() const;
+};
+#endif
+```
+`Time operator+(const Time & t) const`重载了`+`运算符，关键字`operator`
+
+实现：
+```cpp
+Time Time::operator+(const Time & t) const
+{
+    Time sum;
+    sum.minutes = minutes + t.minutes;
+    sum.hours = hours + t.hours + sum.minutes / 60;
+    sum.minutes %= 60;
+    return sum;
+}
+```
+上述代码可以实现一个将时间对象（包含小时和分钟）相加的运算符`+`重载
+
+因为使用了关键字`operator`，可以直接进行如下操作：
+```cpp
+Time time1;
+Time time2;
+total = time1 + time2;
+```
+相当于`total = time1.operator+(time2)`
+
+## 4.2 友元
+
+C++对私有部分的访问控制严格，公有类方法提供唯一的访问途径；友元提供了另一种形式的访问
+
+友元有3种：
+> 友元函数
+> 友元类
+> 元成员函数
+
+下面介绍友元函数，其他两种友元将在第15章介绍
+
+* 友元的必要性
+
+上面使用成员函数定义二元运算符时会出现一个小问题，比如`A = B * 2`可以解释为`A = B.operator*(2)`，但是`A = 2 * B`显然就不太行，因为`2`不是对象，不能调用成员函数计算该式
+
+因此要将`*`重载为非成员函数，可以非成员函数并不能访问对象的私有部分，于是友元函数就很有必要了
+
+* 创建友元函数
+
+第一步是将其原型放在类声明中（我是你朋友的声明）
+```cpp
+friend Time operator*(double m,const Time& t);
+```
+
+第二步是编写函数定义,在类外实例化，由于不是成员函数，不需要作用域`Time::`限定符
+```cpp
+Time operator*(double m,const Time& t)
+{
+    Time result;
+    long total = t.hours * m * 60 + t.minutes * m;
+    result.hours = total / 60;
+    reslut.minutes = total % 60;
+    return result;
+}
+```
+
+还有不使用友元函数的方法：
+```cpp
+Time operator*(double m,const Time& t)
+{
+    return t * m;
+}
+```
+
+* 重载`<<`运算符
+
+`std::cout`实际上是一个`ostream`的对象，而并非关键字，因为`ostream`重载了`<<`运算符，故可以使用`std::cout<<`来输出乱七八糟其他的东西
+
+为了为我们自定义的类重载`<<`，可以如下定义：
+```cpp
+class Time
+{
+private:
+    int hours;
+    int minutes;
+public:
+    Time();
+    Time(int h, int m = 0);
+    void AddMin(int m);
+    void AddHr(int h);
+    void Reset(int h = 0, int m = 0);
+    Time operator+(const Time & t) const;
+    Time operator-(const Time & t) const;
+    Time operator*(double n) const;
+    friend Time operator*(double m, const Time & t)
+        { return t * m; }   // inline definition
+    friend std::ostream & operator<<(std::ostream & os, const Time & t);
+};
+```
+
+如下定义重载`<<`的函数：
+```cpp
+std::ostream & operator<<(std::ostream & os, const Time & t)
+{
+    os << t.hours << " hours, " << t.minutes << " minutes";
+    return os; 
+}
+```
+注意重载运算函数的最后的返回值为`ostream`对象`os`，是为了形如`cout<<time1<<"hello"<<time2`的操作可以被支持
+
+## 4.3 动态内存分配
 
