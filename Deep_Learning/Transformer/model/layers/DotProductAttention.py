@@ -13,23 +13,6 @@ def sequence_mask(X, valid_len, value=0):
     X[~mask] = value
     return X
 
-def masked_softmax(X, valid_len):
-    """遮蔽softmax"""
-    if valid_len is None:
-        return nn.functional.softmax(X, dim=-1)
-    else:
-        shape = X.shape
-        if len(valid_len.shape) == 1:
-            valid_len = T.repeat_interleave(valid_len, shape[1]) 
-            # valid_len的重复后的形状为(batch_size * num_steps1，)
-        else:
-            valid_len = valid_len.reshape(-1)
-        # 这里输入的X的形状为(batch_size, num_steps1， num_steps2),调整为(batch_size * num_steps1, num_steps2)
-        X = sequence_mask(X.reshape(-1, shape[-1]), valid_len, value=-1e6)
-        
-        # 重新调整形状为(batch_size, num_steps1, num_steps2)，并对最后一个维度进行softmax
-        return nn.functional.softmax(X.reshape(shape), dim=-1)
-    
 class DotProductAttention(nn.Module):
     """点积注意力"""
     def __init__(self,dropout=0.0):
@@ -47,9 +30,27 @@ class DotProductAttention(nn.Module):
         """
         d = queries.shape[-1]
         scores = T.bmm(queries,keys.permute(0,2,1)) / math.sqrt(d)
-        self.attention_weights = masked_softmax(scores, valid_lens)
+        self.attention_weights = self.masked_softmax(scores, valid_lens)
         self.attention_weights = self.dropout(self.attention_weights)
         return T.bmm(self.attention_weights, values)
+    
+    def masked_softmax(self, X, valid_len):
+        """遮蔽softmax"""
+        if valid_len is None:
+            return nn.functional.softmax(X, dim=-1)
+        else:
+            shape = X.shape
+            if len(valid_len.shape) == 1:
+                valid_len = T.repeat_interleave(valid_len, shape[1]) 
+                # valid_len的重复后的形状为(batch_size * num_steps1，)
+            else:
+                valid_len = valid_len.reshape(-1)
+            # 这里输入的X的形状为(batch_size, num_steps1， num_steps2),调整为(batch_size * num_steps1, num_steps2)
+            X = sequence_mask(X.reshape(-1, shape[-1]), valid_len, value=-1e6)
+            
+            # 重新调整形状为(batch_size, num_steps1, num_steps2)，并对最后一个维度进行softmax
+            return nn.functional.softmax(X.reshape(shape), dim=-1)
+    
     
 if __name__== "__main__":
     """测试DotProductAttention类"""

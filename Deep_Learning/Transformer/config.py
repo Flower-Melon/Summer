@@ -23,3 +23,6 @@ value_size   = 32
 
 # LayerNorm 形状
 norm_shape   = 32
+
+# 数据集路径
+save_path    = 'saved/Transformer.pth'

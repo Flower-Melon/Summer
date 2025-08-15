@@ -31,7 +31,7 @@ class Decoder(nn.Module):
         for blk in self.blks:
             X, state = blk(X, state)
         # X的形状为(batch_size, num_steps, num_hiddens)
-        return self.dense(X)
+        return self.dense(X), state
 
 if __name__ == "__main__":
     """测试Decoder"""

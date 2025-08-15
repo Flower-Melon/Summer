@@ -12,7 +12,7 @@ from model.models.Decoder import Decoder
 
 from config import *
 
-def train_seq2seq(net,data_dir,lr,num_epochs,tgt_vocab,device):
+def train_seq2seq(net,data_dir,lr,num_epochs,tgt_vocab,device,save_path=None):
     """训练序列到序列模型"""
     
     # 权重初始化
@@ -32,7 +32,6 @@ def train_seq2seq(net,data_dir,lr,num_epochs,tgt_vocab,device):
     net.to(device)  # 将模型移动到指定设备
     optimizer = T.optim.Adam(net.parameters(), lr=lr)  # 优化器
     loss = MaskedSoftmaxCELoss()  # 损失函数
-    epoch_losses = []    # 存放每个 epoch 的 loss
     
     net.train()  # 设置模型为训练模式
     epoch_losses = []  # 用于记录每个 epoch 的损失
@@ -50,7 +49,7 @@ def train_seq2seq(net,data_dir,lr,num_epochs,tgt_vocab,device):
                             device=device).reshape(-1, 1)
             dec_X = T.cat((bos, Y[:, :-1]), dim=1)
             
-            Y_hat = net(X, dec_X, X_valid_len)
+            Y_hat, _ = net(X, dec_X, X_valid_len)
             l = loss(Y_hat, Y, Y_valid_len)
             l.sum().backward()
             grad_clipping(net, 1)
@@ -67,7 +66,8 @@ def train_seq2seq(net,data_dir,lr,num_epochs,tgt_vocab,device):
         # 每 20 个 epoch 打印一次损失
         if (epoch + 1) % 20 == 0:
             print("epoch:", epoch + 1, "loss:", average_loss)
-         # 训练完毕后画图
+            
+    # 训练完毕后画图
     plt.figure(figsize=(6,4))
     plt.plot(range(1, num_epochs+1), epoch_losses, marker='o')
     plt.xlabel("Epoch")
@@ -75,6 +75,11 @@ def train_seq2seq(net,data_dir,lr,num_epochs,tgt_vocab,device):
     plt.title("Training Loss Curve")
     plt.grid(True)
     plt.show()
+    
+    # 如果指定了保存路径，则保存模型状态
+    if save_path:
+        print(f"Saving model state_dict to {save_path} …")
+        T.save(net.state_dict(), save_path)
 
 
 if __name__ == "__main__":
@@ -85,4 +90,4 @@ if __name__ == "__main__":
     decoder = Decoder(len(tgt_vocab), query_size, key_size, value_size, num_heads,
                       num_hiddens, ffn_num_hiddens, norm_shape, num_layers, dropout)
     net = Transformer(encoder, decoder)
-    train_seq2seq(net, train_iter, lr, num_epochs, tgt_vocab, device)
+    train_seq2seq(net, train_iter, lr, num_epochs, tgt_vocab, device, save_path)
