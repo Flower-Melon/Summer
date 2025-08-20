@@ -2,16 +2,12 @@
 
 # 0 感觉有用但没有仔细看的章节
 
-* 所有C++11的变量初始化
-* `4.5 & 4.6` : 共用体和枚举
-* `4.10.2` : 模板类array(C++11)
 * `6.8` : 简单文件I/O
 * `7.10.3` : 深入探讨函数指针
-* `8.2.4 & 8.2.5` : 类与对象使用引用
 * `8.5.6` : C++ 11对于函数模板的新标准
 * `9.2` : 存储连续性，作用域和链接性
-* `11.5` : 为矢量重载运算符
-* `11.6` ：`explicit`类的类型转换
+* `10.6` : 类作用域
+* `11.6` ：类的自动转换和强制类型转换`explicit`
 
 ***
 
@@ -157,6 +153,25 @@ const int Month = 12;
 针对不同类型数据的除法，除法运算符会自动进行重载，如下图所示：
 ![divide_overload](https://raw.githubusercontent.com/Flower-Melon/image/main/img/2025/divide_overload.png)
 
+### 1.2.7 `auto`声明
+
+C++11新增了一个工具，让编译器根据初始值的类型来推断变量的类型，为此重新定义了`auto`关键字
+```cpp
+auto n = 100; //int
+auto x = 1.5; //double
+auto y = 1.3e12l; //long
+```
+上述情形是非常简单的，处理复杂类型时，比如`STL`标准模块库时才能发挥威力：
+```cpp
+std::vector<double> scores;
+std::vector<double>::iterator pv = scores.begin();
+```
+可以简写为：
+```cpp
+std::vector<double> scores;
+auto pv = scores.begin();
+```
+
 ## 1.3 复合数据类型
 
 ### 1.3.1 数组
@@ -165,8 +180,16 @@ const int Month = 12;
 ```cpp
 int cards[4] = {1,2,3,4}; //可行
 int hands[4]; //可行
-int eggs[4] = {} //将全部设置为0
+int eggs[4] = {}; //将全部设置为0
 hands[4] = {5,6,7,8};//数组一旦被赋值，不能再使这种方法更改，需要逐个操作数组元素更改
+```
+
+* C++11初始化方法
+
+主要体现在省略`=`上
+```cpp
+double XB[4] {1.2e4, 1.6e4, 1.1e4, 1.7e4};
+float xt[4] {}; // 可以不包含任何东西
 ```
 
 ### 1.3.2 字符串
@@ -186,6 +209,12 @@ cin.get(); // 强制读取一个字符
 ```
 
 因此可以使用`cin.get(string,size).get()`的方式读取一行字符串并丢弃换行符
+
+* C++11初始化
+```cpp
+char name[] {"xianbo dong"};
+string name2 {"XBB"}l;
+```
 
 * `string`类，C++98添加了`string`类，因此可以使用`string`类存储字符串而不是字符数组
 
@@ -211,7 +240,7 @@ int len = str3.size(); // 相当于strlen()
 
 这里注意，由于`cin`的设计只考虑了`double`，`int`等基本数据类型，没有处理`string`的类方法，因此，这里在读取时最好直接使用`getline(cin,string)`
 
-### 1.3.3 结构体
+### 1.3.3 `struct`结构体
 
 * 一个结构体声明并实例化的例子：
 ```cpp
@@ -258,6 +287,11 @@ int main()
     };
     return 0; 
 }
+```
+
+* C++11初始化
+```cpp
+person XB {"XB", 0.12, 9.98};
 ```
 
 ### 1.3.4 指针
@@ -393,7 +427,43 @@ int main()
 const person* XB[3] = {&p1, &p2, &p3};
 std::cout << XB[1] -> price;
 ```
-### 1.3.5 `vector`容器
+
+### 1.3.5 `enum`枚举
+
+`enum`提供了一种创建符号常量的方法，可以代替`const`：
+```cpp
+enum color {red, blue, yellow, green, black, white};
+```
+其内容`red`,`blue`等作为符号常量，对应整数值`0-5`,称为枚举量
+
+可以用枚举名来声明变量
+```cpp
+color a;
+a = blue; //只能使用枚举量进行赋值
+```
+
+* 设置枚举量的值
+```cpp
+enum money {null, one ,five = 5, test};
+```
+其中枚举量`five`被赋值为`5` ，而`test`默认比前面的大`1`，故其值为`6`
+
+### 1.3.6 `union`共用体
+
+共用体常用于节省内存，现在内存大了显得没那么有用了
+```cpp
+union data
+{
+    int int_val;
+    double double_val;
+}
+
+data XB;
+XB.int_val = 1;
+XB.double_val = 1.38;// 此时int_val的值丢弃
+```
+
+### 1.3.7 `vector`容器
 
 使用场景：
 > 需要动态增长和缩小的数组
@@ -600,7 +670,7 @@ make                  # 编译项目
 但注意下面几种操作是非法的：
 ```cpp
 const int a = 1;
-int* b = &a; //这样b可以修改啊的内容，显得前面的const毫无卵用
+int* b = &a; //这样b可以修改a的内容，显得前面的const毫无卵用
 
 int* const c = &a;//只能这么做
 int* d = c;//非法的，理由同上
@@ -624,7 +694,7 @@ int* const c = &a;
 
 函数指针的使用需要获取函数地址，声明函数指针，并使用函数指针进行调用:
 
-1. 获取函数地址是比较简答的，直接使用函数命不带参数即可
+1. 获取函数地址是比较简答的，直接使用函数名不带参数即可
 2. 对于函数`double XB(int n)`使用指针`double (*xt)(int)`即可
 3. 直接调用即可`(*xt)(4)`等同于`XB(4)`
 
@@ -775,7 +845,7 @@ public:
 
 实例化其中一个函数，使用`Stock::`作用域符号
 ```cpp
-void Stock::acquire(const std::string & co, long n, double pr)
+void Stock::acquire(const std::string& co, long n, double pr)
 {
     company = co;
     if (n < 0)
@@ -836,6 +906,39 @@ class XB
 ```
 这里的`Months`成员变量将被所以`XB`对象共享
 
+* 成员初始化列表
+
+考虑`const`和`&`成员,这两种对象要在声明后马上初始化，而在构造函数中，做的是对他们的赋值，这样是不被允许的。所以必须在执行到构造函数体之前，即在对象被创建时进行初始化。
+```cpp
+class XB
+{
+ priate:
+    const int a;            //const修饰成员
+    int &b;                //被声明为引用
+ public:
+    XB(int b);             //初始化
+};
+
+XB::XB:a(10),b(b) {}
+```
+
+对于其他数据如`int`等,使用成员初始化列表赋值和在构造函数体内赋值没有差别,但是,使用成员初始化列表赋值更直观,效率也更高
+
+* C++11的类内初始化
+
+C++允许使用更直观的方式进行初始化:
+```cpp
+class XB
+{
+    int xt = 1;
+    const int xxt = 2;
+}
+```
+这与在下列默认构造函数等价:
+```cpp
+XB::XB():xt(1),xxt(2) {}
+```
+
 ### 3.2.2 析构函数
 
 其他语言的OOP部分并没有考虑析构函数；析构函数主要用于使用`delete`释放掉`new`分配的内存
@@ -869,7 +972,7 @@ top = stock2.top(stock1);
 ```
 `top`函数如何返回本身对象是个问题，这里要用到`this`指针：
 ```cpp
-const Stock & Stock::topval(const Stock & s) const
+const Stock& Stock::topval(const Stock & s) const
 {
     if (s.total_val > total_val)
         return s;
@@ -943,6 +1046,8 @@ bool Stack::pop(Item & item)
         return false; 
 }
 ```
+
+***
 
 # 4 使用类
 
@@ -1061,13 +1166,13 @@ public:
     Time operator*(double n) const;
     friend Time operator*(double m, const Time & t)
         { return t * m; }   // inline definition
-    friend std::ostream & operator<<(std::ostream & os, const Time & t);
+    friend std::ostream& operator<<(std::ostream& os, const Time& t);
 };
 ```
 
 如下定义重载`<<`的函数：
 ```cpp
-std::ostream & operator<<(std::ostream & os, const Time & t)
+std::ostream& operator<<(std::ostream& os, const Time& t)
 {
     os << t.hours << " hours, " << t.minutes << " minutes";
     return os; 
@@ -1075,5 +1180,225 @@ std::ostream & operator<<(std::ostream & os, const Time & t)
 ```
 注意重载运算函数的最后的返回值为`ostream`对象`os`，是为了形如`cout<<time1<<"hello"<<time2`的操作可以被支持
 
+* 重载运算符的函数选择
+
+上面的探讨表明我们既可以用成员函数，也可以用非成员函数（大多为友元函数）重载运算发，但是有几种运算符只能使用成员函数重载： 
+> `=` ： 赋值运算符
+> `()` ： 函数调用运算符
+> `[]` ： 下标访问运算符
+> `->` ： 通过指针访问类成员的运算符
+
+这是比较容易理解的，它们之所以只能写成成员函数，因为它们在调用时都必须有一个隐式的`this`（即左边的那个对象）参与，而语法又不允许以非成员的形式把这个对象“偷渡”进来
+
+C++ 语法在解析这些运算符时，直接把它们“钉”在了成员的形式上，比如`a = b`，编译器只尝试`a.operator=(b)`,这是语法层面规定的
+
 ## 4.3 动态内存分配
 
+### 4.3.1 特殊成员函数
+
+C++自动提供以下成员函数：
+> 默认构造函数
+> 默认析构函数
+> 复制构造函数
+> 赋值运算符号`=`
+> 地址运算符
+
+* 复制构造函数/赋值运算符
+
+考虑一个类：
+```cpp
+class StringBad
+{
+private:
+    char* str;                // pointer to string
+    int len;                   // length of string
+    static int num_strings;    // number of objects
+public:
+    StringBad(const char* s); // constructor
+    StringBad();               // default constructor
+    ~StringBad();              // destructor
+    friend std::ostream & operator<<(std::ostream & os, 
+                       const StringBad & st);
+};
+```
+
+当为使用`=`用一个类为另一个类赋值时：
+```cpp
+StringBad::StringBad(const char* s) //构造函数
+{
+    len = std::strlen(s);             // set size
+    str = new char[len + 1];          // allot storage
+    std::strcpy(str, s);              // initialize pointer
+    num_strings++;                    // set object count
+    cout << num_strings << ": \"" << str
+         << "\" object created\n";    // For Your Information
+}
+
+StringBad::~StringBad()               // 析构函数
+{
+    cout << "\"" << str << "\" object deleted, ";    // FYI
+    --num_strings;                    // required
+    cout << num_strings << " left\n"; // FYI
+    delete [] str;                    // required
+}
+
+StringBad XB("hello");
+StringBad xt = XB;
+```
+由于并没有为`=`重载，编译器会自动定义一个复制构造函数：
+```cpp
+StringBad(const StringBad&);
+```
+`StringBad xt = XB`等同于`StringBad xt = StringBad(XB)`
+
+默认复制构造函数会复制对象的非静态成员，`StringBad xt = StringBad(XB)`等效于：
+```cpp
+StringBad xt;
+xt.str = XB.str;
+xt.len = BX.len;
+```
+
+这么做显然会带来一些问题，复制构造函数并不知晓构造函数中的计数行为`num_strings++`；并且由于复制构造函数中`xt.str = XB.str`的实际上复制的不是字符串,而是一个指向字符串的指针，共享一片内存，会带来析构函数重复`delete`的现象
+
+因此,对于使用动态内存的类,必须显式地定义复制构造函数和赋值运算符
+
+* 地址运算符
+
+隐式地址运算符`&`返回的是调用对象的地址，即`this`指针的值，与我们的初衷是一致的，不作深入讨论
+
+### 4.3.2 在构造函数种使用`new`
+
+* 如果在构造函数中使用`new`，必须在析构函数中使用`delete`释放
+* `new`对应`delete`，`new[]`对应`delete[]`
+* 如果有多个构造函数，必须使用相同的方式`new`，因为只有一个析构函数，必须与其兼容
+* 必须定义一个复制构造函数，下面是一个例子：
+```cpp
+String::String(const String& st)
+{
+    num_strings++;             
+    len = st.len;              
+    str = new char [len + 1];  
+    std::strcpy(str, st.str);  
+}
+```
+* 必须为对象之间定义重载赋值运算符，下面是一个例子：
+```cpp
+String& String::operator=(const String & st)
+{
+    if (this == &st)
+        return *this;
+    delete [] str;
+    len = st.len;
+    str = new char[len + 1];
+    std::strcpy(str, st.str);
+    return *this;
+}
+```
+
+### 4.3.3 使用`new`初始化对象
+
+使用`new`初始化对象时`ClassName* XB = new ClassName`将会调用默认构造函数
+
+`ClassName* XB = new ClassName(value)`将会调用构造函数`ClassName(value)`
+
+`delete XB`将会自动调用析构函数
+
+* 一点思考:`new`和`delete`强大的动态内存管理是非常有用的:
+> 1. 如果要在运行时才知道需要多少个元素、要多大的空间，就无法用编译期固定大小的数组或局部对象。`new`可以根据程序运行时的需求分配任意大小的空间。例如读取文件第一行里说要申请$N$个对象，$N$直到运行时才知道，这时就必须用`new[]`
+>
+> 2. 栈（局部变量）对象的生存期严格受作用域控制，出了作用域就自动析构。`new`出来的对象躲在堆上，你可以随时`new`，随时`delete`，不受编译时作用域的限制，能更灵活地延长或缩短对象的寿命。
+> 3. 对对象使用`new/delete`会自动调用构造/析构函数
+> `new`不仅分配内存，还调用对象的构造函数；`delete`会先调用析构函数，再释放内存。相比 C 语言的`malloc/free`，这点更安全
+
+## 4.4 类继承
+
+### 4.4.1 类派生
+
+先定义一个简单的基类
+```cpp
+class TableTennisPlayer
+{
+private:
+    string firstname;
+    string lastname;
+    bool hasTable;
+public:
+    TableTennisPlayer (const string& fn = "none",
+                       const string& ln = "none", bool ht = false);
+    void Name() const;
+    bool HasTable() const { return hasTable; };
+    void ResetTable(bool v) { hasTable = v; };
+};
+```
+
+以此为基础派生一个类：
+```cpp
+class RatedPlayer : public TableTennisPlayer
+{
+    private:
+        unsigned int rating;
+    public:
+    RatedPlayer (unsigned int r = 0, const string & fn = "none",
+                 const string & ln = "none", bool ht = false);
+    RatedPlayer(unsigned int r, const TableTennisPlayer& tp);
+    unsigned int Rating() const { return rating; }
+    void ResetRating (unsigned int r) {rating = r;}
+};
+```
+
+* `RatedPlayer`派生类具有的特性
+
+> 派生类对象存储了基类的数据成员（继承了基类的实现）
+> 派生类对象可以使用基类的方法（继承了基类的接口）
+
+* 需要在继承中添加的内容
+
+> 派生类需要自己的构造函数
+> 派生类可以额外添加的数据成员和成员函数
+
+* 派生类的构造函数
+
+派生类不能直接访问基类的私有成员,必须通过基类的方法进行访问,因此,`RatedPlayer`派生类的构造函数必须使用基类构造函数,下面给出一个派生类的构造函数:
+```cpp
+RatedPlayer::RatedPlayer(unsigned int r, const string& fn, 
+     const string& ln, bool ht): TableTennisPlayer(fn, ln, lt)
+{
+    rating = r;
+}
+```
+
+或者可以利用基类的隐式复制构造函数:
+```cpp
+RatedPlayer::RatedPlayer(unsigned int r, const TableTennisPlayer & tp)
+    : TableTennisPlayer(tp), rating(r)
+{}
+```
+
+注意这里必须使用成员初始化列表的方法,否则编译器将在外层自动使用默认构造函数
+
+* 派生类和基类的特殊关系
+
+1. 派生类可以使用基类的非私有方法
+
+2. 基类指针可以不进行显式类型转换的前提下指向派生类对象
+
+3. 基类引用可以不进行显式类型转换的前提下引用派生类对象
+
+```cpp
+RatedPlayer XB(1140, "Tara", "Boomdea", true);
+TableTennisPlayer& tp = XB; // 基类引用引用派生类对象
+TableTennisPlayer* pt = &XB; // 基类指针指向派生类对象
+```
+这里要注意,基类的指针和引用只能使用基类的方法,不能使用派生类的方法
+
+与之对应的,不能将派生类的指针和引用赋给基类对象,这很容易理解,派生类的引用按理说可以使用派生类的方法,但是基类对象并没有派生类的那些数据成员,所以不允许
+
+4. 得益于`2`和`3`可以使用派生类的对象初始化或赋值给基类对象
+```cpp
+RatedPlayer XB(1140, "Tara", "Boomdea", true);
+TableTennisPlayer tp = XB; // 基类对象使用派生类对象初始化
+TableTennisPlayer tp2;
+tp2 = XB; // 基类对象使用派生类对象赋值
+```
+
+### 4.4.2 继承:`is-a`关系

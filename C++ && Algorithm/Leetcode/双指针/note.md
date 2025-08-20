@@ -1,4 +1,4 @@
-# 本文档用来做刷题记录
+# 双指针
 
 ## 11.盛最多水的容器
 
@@ -143,3 +143,90 @@ int removeDuplicates(std::vector<int>& nums)
 * 一点感想
 
 通过上来这两题，希望在以后的刷题过程中时刻牢记多动脑子，暴力遍历时能想想是否可以优化，分配内存给新变量时想想是否真的有必要。
+
+## 42.接雨水
+
+给定$n$个非负整数表示每个宽度为$1$的柱子的高度图，计算按此排列的柱子，下雨之后能接多少雨水。
+
+![42rain](https://raw.githubusercontent.com/Flower-Melon/image/main/img/2025/42rain.png)
+
+* 独立思考的思路，时间复杂度为$O(n)$
+
+```cpp
+int trap(std::vector<int>& height) 
+{
+    int numsize = height.size();
+    int C = 0; // 容量
+
+    int H = 0;
+    int key = 0;
+    for(int i = 0; i < numsize; i++)
+    {
+        if(height[i] > H)
+        {
+            H = height[i];
+            key = i;
+        }
+    }
+
+    int XB = 0;
+    int xt = 1;
+    while(xt < key)
+    {
+        if(height[xt] >= height[XB])
+        {
+            XB = xt;
+        }
+        else
+        {
+            C += (height[XB] - height[xt]);
+        }
+        xt++;
+    }    
+
+    XB = numsize - 1;
+    xt = numsize - 2;
+    while(xt > key)
+    {
+        if(height[xt] >= height[XB])
+        {
+            XB = xt;
+        }
+        else
+        {
+            C += (height[XB] - height[xt]);
+        }
+        xt--;
+    }
+    return C;  
+}
+```
+以上是我思考了接近半个小时后想出的方法，先找到最高的柱，以此为分界线从两侧向最高的柱子进行遍历，只需要一次遍历就能计算出存储雨水的多少。虽然代码并不简练，但是时间复杂度和空间复杂度都为最优，真正体现了我思考的过程，算是力扣上我第一个独立解出的`hard`难度的题了
+
+* 官方思路，真正的双指针，代码更为简练
+
+真正的双指针思路太简练优美了，真的是望尘莫及,在一次遍历内同时寻找最高的柱子,同时计算容积
+```cpp
+int trap(vector<int>& height) 
+{
+    int ans = 0;
+    int left = 0, right = height.size() - 1;
+    int leftMax = 0, rightMax = 0;
+    while (left < right) 
+    {
+        leftMax = max(leftMax, height[left]);
+        rightMax = max(rightMax, height[right]);
+        if (height[left] < height[right]) 
+        {
+            ans += leftMax - height[left];
+            ++left;
+        } 
+        else 
+        {
+            ans += rightMax - height[right];
+            --right;
+        }
+    }
+    return ans;
+}
+```

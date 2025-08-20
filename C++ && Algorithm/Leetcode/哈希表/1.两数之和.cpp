@@ -6,26 +6,25 @@
 
 // @lc code=start
 #include <vector>
-
+#include <unordered_map>
+using std::vector;
+using std::unordered_map;
 class Solution 
 {
 public:
-    std::vector<int> twoSum(std::vector<int>& nums, int target) 
+    vector<int> twoSum(vector<int>& nums, int target) 
     {
-        std::vector<int> answer;
-        for(int i = 0; i < (nums.size()-1); i++)
+        unordered_map<int, int> hashtable;
+        for (int i = 0; i < nums.size(); ++i) 
         {
-            for(int j = i + 1; j < nums.size(); j++)
+            auto it = hashtable.find(target - nums[i]);
+            if (it != hashtable.end()) 
             {
-                if((nums[i] + nums[j]) == target)
-                {
-                    answer.push_back(i);
-                    answer.push_back(j);
-                    return answer;
-                }
+                return {it->second, i};
             }
+            hashtable[nums[i]] = i;
         }
-        return answer;
+        return {};
     }
 };
 
