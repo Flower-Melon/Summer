@@ -1,4 +1,4 @@
-# 此文档用来记录C++学习过程中关键点
+# C++ Primer Plus（第六版）前13章笔记
 
 # 0 感觉有用但没有仔细看的章节
 
@@ -7,7 +7,7 @@
 * `8.5.6` : C++ 11对于函数模板的新标准
 * `9.2` : 存储连续性，作用域和链接性
 * `10.6` : 类作用域
-* `11.6` ：类的自动转换和强制类型转换`explicit`
+* `11.6` ：类的自动转换和强制类型转换以及关键字`explicit`
 
 ***
 
@@ -1312,7 +1312,7 @@ String& String::operator=(const String & st)
 
 ## 4.4 类继承
 
-### 4.4.1 类派生
+### 4.4.1 公有继承
 
 先定义一个简单的基类
 ```cpp
@@ -1401,4 +1401,275 @@ TableTennisPlayer tp2;
 tp2 = XB; // 基类对象使用派生类对象赋值
 ```
 
-### 4.4.2 继承:`is-a`关系
+这里注意，其他的数据类型不允许将一种类型的地址赋值给另一种类型的指针：
+```cpp
+double x = 2.5;
+int* a = &x; // 不合法
+long& b = x;// 不合法
+```
+使用基类指针或引用指向派生类被称为向上强制转换，该规则是`is-a`关系的一部分
+
+* `is-a`关系
+
+C++有三种继承方式：公有继承、保护继承和私有继承。公有继承是最常用的方式，它建立了一种`is-a`关系，即派生类是基类的一种特殊类型。即`is-a-kind-of`关系：香蕉是一种水果
+
+### 4.4.2 多态公有继承(虚函数)
+
+多态公有继承是C++的核心特性之一，它允许派生类重写基类的方法，从而实现运行时多态。有两种方法可以实现多态公有继承：
+> 使用虚函数
+> 在派生类中重写基类的方法
+
+* 下面从一个使用虚函数的实例入手
+```cpp
+class Brass
+{
+private:
+    std::string fullName;
+    long acctNum;
+    double balance;
+public:
+    Brass(const std::string & s = "Nullbody", long an = -1,
+                double bal = 0.0);
+    void Deposit(double amt);
+    virtual void Withdraw(double amt);
+    double Balance() const;
+    virtual void ViewAcct() const;
+    virtual ~Brass() {}
+};
+
+//Brass Plus Account Class
+class BrassPlus : public Brass
+{
+private:
+    double maxLoan;
+    double rate;
+    double owesBank;
+public:
+    BrassPlus(const std::string & s = "Nullbody", long an = -1,
+            double bal = 0.0, double ml = 500,
+            double r = 0.11125);
+    BrassPlus(const Brass & ba, double ml = 500, 
+		                        double r = 0.11125);
+    virtual void ViewAcct()const;
+    virtual void Withdraw(double amt);
+    void ResetMax(double m) { maxLoan = m; }
+    void ResetRate(double r) { rate = r; };
+    void ResetOwes() { owesBank = 0; }
+};
+```
+* 虚成员函数
+
+可以看到`Brass`类和`BrassPlus`类都定义了虚函数`ViewAcct()`和`Withdraw()`，使用了关键字`virtual`，这两种方法的行为是不同的
+
+以`ViewAcct()`为例，不同的行为如下所示：
+```cpp
+void Brass::ViewAcct() const
+{
+     // set up ###.## format
+    format initialState = setFormat();
+    precis prec = cout.precision(2);
+    cout << "Client: " << fullName << endl;
+    cout << "Account Number: " << acctNum << endl;
+    cout << "Balance: $" << balance << endl;
+    restore(initialState, prec); // Restore original format
+}
+
+void BrassPlus::ViewAcct() const
+{
+    // set up ###.## format
+    format initialState = setFormat();
+    precis prec = cout.precision(2);
+
+    Brass::ViewAcct();   // display base portion
+    cout << "Maximum loan: $" << maxLoan << endl;
+    cout << "Owed to bank: $" << owesBank << endl;
+    cout.precision(3);  // ###.### format
+    cout << "Loan Rate: " << 100 * rate << "%\n";
+    restore(initialState, prec); 
+}
+```
+
+使用`virtual`是有意义的，下面的例子：
+```cpp
+Brass XB("XB", 123456, 1000.0);
+BrassPlus xt("xt", 654321, 2000.0);
+
+Brass& p1 = XB; // 基类引用指向基类对象
+Brass& p2 = xt; // 基类引用指向派生类对象
+```
+如果不使用虚函数，那么对象的引用和指针将根据对象的类型来决定调用哪个方法
+```cpp
+p1.ViewAcct(); // 调用 Brass::ViewAcct()
+p2.ViewAcct(); // 调用 Brass::ViewAcct()
+```
+如果使用虚函数，那么对象的引用和指针将根据对象的实际类型来决定调用哪个方法
+```cpp
+p1.ViewAcct(); // 调用 Brass::ViewAcct()
+p2.ViewAcct(); // 调用 BrassPlus::ViewAcct()
+```
+使用虚函数的好处是可以在运行时根据对象的实际类型来决定调用哪个方法：
+> 函数的形参可以使用基类的引用，这样既可以向函数传递基类对象，也可以向函数传递派生类对象，而函数会根据传递的具体类型调用对应的实现函数，这就是多态性
+> 可以创建基类的指针数组，基类的指针既可以指向基类对象，也可以指向派生类对象，因此可以使用一个数组来表示多种类型的对象，这就是多态性
+
+* 虚析构函数
+
+在上面的例子中，基类的析构函数`virtual ~Brass() {}`，使用了虚函数`virtual`
+
+首先要说明派生类的析构函数，与构造函数相反，派生类的析构函数先释放派生类的数据，再释放基类对象。
+基类的析构函数一定使用虚函数，这是因为如果基类的析构函数不是虚函数，那么当使用基类指针指向派生类对象时，删除该指针将只调用基类的析构函数，而不会调用派生类的析构函数，这会导致派生类的数据成员没有被释放，从而造成内存泄漏
+
+下面是一个正常使用虚析构函数的例子
+```cpp
+class Base 
+{
+public:
+    Base() 
+    {
+        std::cout << "Base constructor called" << std::endl;
+    }
+
+    virtual ~Base() 
+    { // 虚析构函数
+        std::cout << "Base destructor called" << std::endl;
+    }
+};
+
+class Derived : public Base 
+{
+public:
+    Derived() 
+    {
+        std::cout << "Derived constructor called" << std::endl;
+    }
+
+    ~Derived() 
+    { // 派生类的析构函数
+        std::cout << "Derived destructor called" << std::endl;
+    }
+};
+
+int main() 
+{
+    Base* obj = new Derived(); // 通过基类指针创建派生类对象
+    delete obj; // 正确调用派生类和基类的析构函数
+    return 0;
+}
+```
+输出结果为：
+```bash
+Base constructor called
+Derived constructor called
+Derived destructor called
+Base destructor called
+```
+可以看到，派生类的析构函数先被调用，然后基类的析构函数被调用，这就是虚析构函数的作用
+
+* 静态联编和动态联编
+
+静态联编和动态联编是C++中两种不同的函数调用方式。静态联编是在编译时确定函数调用的地址，而动态联编是在运行时根据对象的实际类型确定函数调用的地址
+静态联编通常用于非虚函数的调用，而动态联编用于虚函数的调用
+
+虚函数的工作原理：
+> 每个包含虚函数的类都有一个虚函数表（vtable），该表存储了类的虚函数地址
+> 每个对象都有一个指向其类的虚函数表的指针（vptr）
+> 当通过基类指针或引用调用虚函数时，程序会查找对象的虚函数表，根据实际类型调用对应的函数
+
+与之对应的，在使用虚函数时，会在内存和执行速度上有一定的成本：
+> 每个包含虚函数的类会有一个虚函数表，这会占用一定的内存空间
+> 每次调用虚函数时，程序需要通过虚函数表查找函数地址，这会带来一定的性能开销
+
+虽然非虚函数的效果更高，但不具备动态联编功能
+
+**注意虚函数必须是成员函数，因此友元函数不能是虚函数**
+
+### 4.4.4 关键字`protected`
+
+前面提到了，派生类不能直接访问基类的私有`private`成员，需要使用基类的成员函数进行访问，这有时候不是很方便，因此`protected`就比较有用了：
+
+对于外部来说，`protected`成员和私有成员类似，对于派生类来说，`protected`成员和公有成员类似例如下面的例子中：
+```cpp
+class Brass
+{
+    protected:
+        double balance;
+    ...
+}
+```
+在这种情况下，`BrassPlus`派生类可以直接访问`balance`而无需使用成员函数
+
+### 4.4.5 抽象基类
+
+现在考虑一个问题，`is-a`关系是有一些缺陷的，假设我们的基类是椭圆而派生类是圆，椭圆的私有成员显然包括长轴和短轴，之前的例子都是派生类多了自己的成员和方法，而圆从椭圆类派生和之前的例子不同，圆的私有成员只有半径，从椭圆继承将会导致信息冗余
+
+这种情况下，不使用继承，似乎直接定义一个`Circle`类似乎会更简单
+
+还有一种方法，从`ELLipse`和`Circle`中抽象出他们的共性，将这些特性放到一个`ABC`中，然后从`ABC`中派生出`ELLipse`和`Circle`，这就是抽象基类的思想
+
+下面是一个抽象基类的例子：
+```cpp
+class AcctABC
+{
+private:
+    std::string fullName;
+    long acctNum;
+    double balance;
+protected:
+    const std::string& FullName() const {return fullName;}
+    long AcctNum() const {return acctNum;}
+public: 
+    AcctABC(const std::string& s = "Nullbody", long an = -1,
+                double bal = 0.0);
+    void Deposit(double amt) ;
+    virtual void Withdraw(double amt) = 0; // pure virtual function
+    double Balance() const {return balance;};
+    virtual void ViewAcct() const = 0;     // pure virtual function
+    virtual ~AcctABC() {}
+};
+```
+其中`Withdraw()`和`ViewAcct()`是纯虚函数，使用`= 0`来表示，这样的类称为抽象基类，不能被实例化，这样的类描述的是一个至少使用一个纯虚函数的接口
+
+从这个抽象基类中实例化的派生类可以如下所示：
+```cpp
+class Brass :public AcctABC
+{
+public:
+    Brass(const std::string& s = "Nullbody", long an = -1,
+           double bal = 0.0) : AcctABC(s, an, bal) { }
+    virtual void Withdraw(double amt);
+    virtual void ViewAcct() const;
+    virtual ~Brass() {}
+};
+
+class BrassPlus : public AcctABC
+{
+private:
+    double maxLoan;
+    double rate;
+    double owesBank;
+public:
+    BrassPlus(const std::string& s = "Nullbody", long an = -1,
+            double bal = 0.0, double ml = 500,
+            double r = 0.10);
+    BrassPlus(const Brass& ba, double ml = 500, double r = 0.1);
+    virtual void ViewAcct()const;
+    virtual void Withdraw(double amt);
+    void ResetMax(double m) { maxLoan = m; }
+    void ResetRate(double r) { rate = r; };
+    void ResetOwes() { owesBank = 0; }
+};
+```
+
+在这个例子中，`AcctABC`是一个抽象基类，它定义了一个接口，派生类`Brass`和`BrassPlus`实现了这个接口。由于`AcctABC`是一个抽象基类，因此不能被实例化，只能通过派生类来创建对象
+
+### 4.4.6 派生类的动态内存分配
+
+* 当基类使用`new`而派生类不使用`new`时
+
+无需为派生类显式地定义析构函数，复制构造函数和重载赋值运算符，因为派生类本身不含有动态内存，派生类的析构函数会调用基类的析构函数，管理基类的`new`动态内存只需要借助基类定义的析构函数即可。
+
+同理，**派生类的默认复制构造函数会使用基类的复制构造函数**
+
+* 当派生类使用`new`时
+
+此时随便想想也必须显式地定义析构函数，复制构造函数和重载赋值运算符，这没什么好说的
+
