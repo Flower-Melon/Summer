@@ -1,5 +1,62 @@
 # 双指针
 
+## 容器类`vector`
+
+使用场景：
+> 需要动态增长和缩小的数组
+> 需要频繁在序列末尾添加或移除元素时
+> 需要一个可以高效随机访问元素的容器时
+
+那么使用`vector`吧：
+
+```cpp
+#include <vector>
+```
+
+* 创建`vector`
+
+```cpp
+std::vector<int> myVector; // 创建一个存储整数的空 vector
+std::vector<int> myVector(5); // 创建一个包含 5 个整数的 vector，每个值都为默认值（0）
+std::vector<int> myVector(5, 10); // 创建一个包含 5 个整数的 vector，每个值都为 10
+std::vector<int> vec2 = {1, 2, 3, 4}; // 初始化一个包含元素的 vector
+```
+
+* 添加和删除元素
+
+```cpp
+myVector.push_back(7); // 将整数 7 添加到 vector 的末尾
+myvector.pop_back(); // 删除末尾数据
+myVector.insert(vec.begin() + 1, 10);// 在第二个位置插入元素 10
+myVector.erase(myVector.begin() + 2); // 删除第三个元素
+myVector.clear(); // 清空 vector
+```
+
+* 访问元素和大小
+
+```cpp
+int x = myVector[0]; // 获取第一个元素
+int y = myVector.at(1); // 获取第二个元素
+int size = myVector.size(); // 获取 vector 中的元素数量
+```
+
+* 循环遍历
+
+下面是一般使用for循环的形式：
+```cpp
+for (auto it = myVector.begin(); it != myVector.end(); ++it) 
+{
+    std::cout << *it << " ";
+}
+```
+对于容器类对象还可以使用范围循环`int element : myVector`，非常像python的`for i in range(container)`
+```cpp
+for (int element : myVector) 
+{
+    std::cout << element << " ";
+}
+```
+
 ## 11.盛最多水的容器
 
 给定一个长度为$n$的整数数组$height$。有$n$条垂线，第i条线的两个端点是$(i, 0)$和$(i, height[i])$。

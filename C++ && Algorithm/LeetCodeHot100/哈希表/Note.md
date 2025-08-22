@@ -16,33 +16,34 @@
 
 * C++中使用哈希表
 
-C++中使用哈希表需要包含头文件`#include<unordered_map>`,它是一个模板类,可以存放任意类型的键值对,常用的成员函数有:
-> `insert()`: 插入键值对
-> `erase()`: 删除键值对
+C++中使用哈希表需要包含头文件`#include<unordered_map>`或`#include<unordered_set>`,它是一个模板类,可以存放任意类型的键值对,常用的成员函数有:
+> `insert()`: 插入键值对或键
+> `erase()`: 删除键值对或键
 > `find()`: 以`key`作为参数寻找哈希表中的元素，如果哈希表中存在该`key`值则返回该位置上的迭代器，否则返回哈希表最后一个元素下一位置上的迭代器
-> `count()`: 统计某个`key`值对应的元素个数， 因为`unordered_map`不允许重复元素，所以返回值为0或1
+> `count()`: 统计某个`key`值对应的元素个数， 因为哈希表不允许重复元素，所以返回值为0或1
 > `size()`: 返回哈希表中键值对的个数
 > `clear()`: 清空哈希表
-> `[]`: 通过`key`访问值,如果`key`不存在,则插入键值对,值为默认值
-> `at()`: 通过`key`访问值,如果`key`不存在,则抛出异常
 > `begin()`: 返回哈希表的迭代器指向第一个元素
 > `end()`: 返回哈希表的迭代器指向最后一个元素的下一个位置
 
-* 声明方法:
+* 声明方法
 ```cpp
 #include<unordered_map>
-std::unordered_map<key_type, value_type> map_name;
-std::unordered_map<int, int> map;
+#include<unordered_set>
+std::unordered_map<int, int> map; //存储键值对
+std::unordered_set<int> set; // 只存储键
 ```
 
-* 值的查找方法
+* 存储键值对时值的访问方法
 ```cpp
-value = map_name[key]; // 如果key不存在，则插入键值对，值为默认值
-value = map_name.at(key); // 如果key不存在，则抛出异常
-value = map_name.find(key)->second; // 如果key不存在，则返回end()迭代器
+#include<unordered_map>
+std::unordered_map<int, int> map; //存储键值对
+value = map[key]; // 如果key不存在，则插入键值对，值为默认值
+value = map.at(key); // 如果key不存在，则抛出异常
+value = map.find(key)->second; // 如果key不存在，则返回end()迭代器
 ```
 
-* 下面是一个实例判断数组里是否有重复元素:
+* 下面是一个实例判断数组里是否有重复元素
 ```cpp
 #include <iostream>
 #include <vector>
@@ -80,7 +81,11 @@ int main()
 
 ## 1.两数之和
 
-原始暴力枚举做法：
+给定一个整数数组`nums`和一个整数目标值`target`，请你在该数组中找出 和为目标值`target`的那**两个**整数，并返回它们的数组下标。
+
+你可以假设每种输入只会对应一个答案，并且你不能使用两次相同的元素
+
+* 原始暴力枚举做法
 ```cpp
 std::vector<int> twoSum(std::vector<int>& nums, int target) 
 {
@@ -102,7 +107,7 @@ std::vector<int> twoSum(std::vector<int>& nums, int target)
 ```
 时间复杂度为$O(n^2)$
 
-使用哈希表方法:
+* 使用哈希表方法
 ```cpp
 using std::vector;
 using std::unordered_map
@@ -122,3 +127,50 @@ vector<int> twoSum(vector<int>& nums, int target)
 }
 ```
 只需要一次遍历，时间复杂度为$O(n)$
+
+## 49.字母异位词分组
+
+给你一个字符串数组，请你将**字母异位词**组合在一起。可以按任意顺序返回结果列表。
+
+示例：
+
+输入：`strs = ["eat", "tea", "tan", "ate", "nat", "bat"]`
+输出：`[["bat"],["nat","tan"],["ate","eat","tea"]]`
+
+* 思考过程
+
+本题中关键点是如何区分两个单词是否为**字母异位词**，这里我还是蠢了，想了一会全是废物办法，包括统计每个字符的出现次数并作比较，为每一个单词生成哈希表再做比较等等，归根到底全都是些力大砖飞的办法
+
+官方给出的方法其实很简单，说白了就是**字母异位词**的`sort`排序结果一定是相同的。说起来简单，但我就是没想到，还是太废物了
+
+* 灵活使用数据结构
+
+虽然本题是哈希表专题下的题，但是不能拘泥于哈希表的一般形式
+
+需要构建`unordered_map<string,vector<string>> XB`的数据结构，以`sort`后的单词作为`key`，所有**字母异位词**作为值存储于对应的`key`之后
+
+这里哈希的`value`值实际上存储了一堆东西，也是思维僵化了，总觉得`value`只能是一个值，实际上可以是一个容器
+
+到这里能想出**字母异位词**的等价条件，并构建出对应的数据结构，也基本上结束了
+
+* 题解
+
+```cpp
+vector<vector<string>> groupAnagrams(vector<string>& strs) 
+{
+    unordered_map<string,vector<string>> XB;
+    for(string& str : strs)
+    {
+        string sorted = str;
+        sort(sorted.begin(),sorted.end());
+        XB[sorted].push_back(str);
+    }
+
+    vector<vector<string>> ans;
+    for(auto& it : XB)
+    {
+        ans.push_back(it.second);
+    }
+    return ans;
+}
+```
